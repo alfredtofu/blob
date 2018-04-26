@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="google-site-verification" content="3ULTo0aFyClho9MhFrC7TWxkQiDdMDxDG6dBiVg9Wkw" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Detection,CNN," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Marcher" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="paper链接 我觉得是一个挺有意思的paper，整体pipeline还是proposals –&amp;gt; feature extraction –&amp;gt; classification –&amp;gt; post processing。 那么跟RCNN有啥区别？大体有两点：1) 不同的feature，作者加入了multi-region features以及semantic segmentation-aw">
+<meta name="keywords" content="Detection,CNN">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Notes for &quot;Object detection via a multi-region &amp; semantic segmentation-aware CNN model&quot;">
+<meta property="og:url" content="http://blog.cvmarcher.cn/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/index.html">
+<meta property="og:site_name" content="Marcher">
+<meta property="og:description" content="paper链接 我觉得是一个挺有意思的paper，整体pipeline还是proposals –&amp;gt; feature extraction –&amp;gt; classification –&amp;gt; post processing。 那么跟RCNN有啥区别？大体有两点：1) 不同的feature，作者加入了multi-region features以及semantic segmentation-aw">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://blog.cvmarcher.cn/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/region_samples.jpg">
+<meta property="og:image" content="http://blog.cvmarcher.cn/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/multi_region_cnn.jpg">
+<meta property="og:image" content="http://blog.cvmarcher.cn/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/ssa_cnn.jpg">
+<meta property="og:image" content="http://blog.cvmarcher.cn/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/whole_net.png">
+<meta property="og:image" content="http://blog.cvmarcher.cn/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/localization.jpg">
+<meta property="og:image" content="http://blog.cvmarcher.cn/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/result_individual.jpg">
+<meta property="og:image" content="http://blog.cvmarcher.cn/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/result_2007.jpg">
+<meta property="og:image" content="http://blog.cvmarcher.cn/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/result_2012.jpg">
+<meta property="og:updated_time" content="2018-04-26T06:29:35.868Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Notes for &quot;Object detection via a multi-region &amp; semantic segmentation-aware CNN model&quot;">
+<meta name="twitter:description" content="paper链接 我觉得是一个挺有意思的paper，整体pipeline还是proposals –&amp;gt; feature extraction –&amp;gt; classification –&amp;gt; post processing。 那么跟RCNN有啥区别？大体有两点：1) 不同的feature，作者加入了multi-region features以及semantic segmentation-aw">
+<meta name="twitter:image" content="http://blog.cvmarcher.cn/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/region_samples.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://blog.cvmarcher.cn/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/"/>
+
+
+
+
+
+  <title>Notes for "Object detection via a multi-region & semantic segmentation-aware CNN model" | Marcher</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?987526def156bbe461d91b9c305cc25e";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Marcher</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://blog.cvmarcher.cn/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Zhujin Liang">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/img/avatar_zhujin.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Marcher">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Notes for "Object detection via a multi-region & semantic segmentation-aware CNN model"</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2015-05-17T11:37:12+08:00">
+                2015-05-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Academic/" itemprop="url" rel="index">
+                    <span itemprop="name">Academic</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count"
+                        data-disqus-identifier="posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+             <span id="/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/" class="leancloud_visitors" data-flag-title="Notes for "Object detection via a multi-region & semantic segmentation-aware CNN model"">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数 </span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><a href="http://arxiv.org/abs/1505.01749" target="_blank" rel="noopener">paper链接</a></p>
+<p>我觉得是一个挺有意思的paper，整体pipeline还是proposals –&gt; feature extraction –&gt; classification –&gt; post processing。</p>
+<p>那么跟RCNN有啥区别？大体有两点：1) 不同的feature，作者加入了<strong>multi-region features</strong>以及<strong>semantic segmentation-aware features</strong>，2)不同的后处理过程，作者加入了迭代式定位以及bbox voting的方式。这个方法在PASCAL VOC2007的mAP是<strong>74.9%</strong>（RCNN是<strong>66%</strong>），在VOC2012是<strong>70.7%</strong>（RCNN是<strong>63%</strong>），相当大的提升啊。</p>
+<a id="more"></a>
+<p>下面就从feature extraction跟post processing来讲。</p>
+<h1 id="Features"><a href="#Features" class="headerlink" title="Features"></a>Features</h1><p>旨在找到更多具有判别性的特征。</p>
+<h2 id="Multi-Region-CNN-features"><a href="#Multi-Region-CNN-features" class="headerlink" title="Multi-Region CNN features"></a>Multi-Region CNN features</h2><p>对物体不同区域进行建模，得到具有更丰富表现性的特征。感觉就有点DPM的感觉了（不过是手动指定parts）。作者使用的区域有以下几种：</p>
+<ol>
+<li><em>Original candidate box</em> (a): 这个就是proposal产生的区域了，用来得到物体整体的外观信息。</li>
+<li><em>Half boxes</em> (b/c/d/e): 把proposal按上下左右切半得到的区域。用来只学习一半物体的特征，可以用来处理遮挡情况。</li>
+<li><em>Central Regions</em> (f/g): 这部分的regions是用来学习物体中间部分的特征。</li>
+<li><em>Border Regions</em> (h/i): 这部分regions是用来学习物体边缘的特征，而且是joint来学。这部分特征对不精确定位的proposal的边缘特别敏感，因为不精确定位，比如过小，会导致丢失了边缘的信息。不过话说回来，这跟<strong>Half boxes</strong>不是有些矛盾么？</li>
+<li><em>Contextual Region</em> (j): 这种region是用来学习物体周围的信息。</li>
+</ol>
+<img src="/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/region_samples.jpg">
+<p>最外围黄色的框表示实际上截取出来的region，上面的regions有些是Rectangular rings(矩形圈): g/h/i/j，在这些矩形圈里面，内圈的信息是我们不想要的，所以实际上在截取regions的时候，要简单做个后处理，就是对内圈的信息全部置为0。</p>
+<p>这时候很多人就会想着把regions截取出来直接扔到CNN里面训练就好了，但是这会使得预算量比RCNN多了很多，速度会超级超级慢。所以作者在截取regions出来之后并不是直接用这些regions来训练，而是用它们在全图的feature maps上对应的位置截取相应的regions来训练(<a href="/2015/05/17/cnn-trick">这里</a>有讲)。这种方式有几个好处是：1) 节省计算，2) 减少参数，能起到正则化的作用，3) 能一起finetune，互相约束，我在做ICCV的时候也使用了这样的想法，果然在CNN里面大家的想法都是类似的，理论性不强，局限性很强，比的就是谁先做出来了，谁的机器多，谁的数据多。</p>
+<p>那么就得出了下面的网络结构:</p>
+<img src="/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/multi_region_cnn.jpg">
+<p>网络就可以分为两部分：activation maps module和region adaptation modules，region adaptation modules用了hekaiming的spatial pooling layer，能够防止了RCNN里面的强制变形，也能在一起程度上处理multi-scale（后面有时间会写一个RCNN/SPP-NET/Fast RCNN的对比）。</p>
+<p>网络用的是VGG，在训练的时候，所有convolution layers的参数都是固定的，每个region modules各自finetune所有的全链接层。finetune方法跟各家都类似了，把1000类的softmax换成N+1类的，N是正样本的类别数，1是背景。proposal跟groundtruth的overlap大于0.5的认为是正样本，负样本的overlap在[0.1, 0.5)，不过为何是至少要有0.1的overlap呢？</p>
+<h2 id="Semantic-Segmentation-Aware-CNN-features"><a href="#Semantic-Segmentation-Aware-CNN-features" class="headerlink" title="Semantic Segmentation-Aware CNN features"></a>Semantic Segmentation-Aware CNN features</h2><p>Motivation是分割跟检测相关性很强，是啊，我们<a href="http://vision.sysu.edu.cn/projects/deep-joint-task-learning/" target="_blank" rel="noopener">NIPS的工作</a>也这么想。这个CNN加了个Aware，顿时间觉得好高大上，名字很重要。</p>
+<p>网络结构如下：</p>
+<img src="/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/ssa_cnn.jpg">
+<p>同样的，网络也分成了两部分：</p>
+<ul>
+<li><strong><em>Activation Maps Module</em></strong>: 就是一个<a href="http://arxiv.org/abs/1411.4038" target="_blank" rel="noopener">FCN</a>，不一样的地方是他们加入了降维：先在VGG上finetune，然后把fc7从4096个channels改为512，然后再finetune一次。label的设置见图，作者为了不引入额外的anntation，他把ground truth bbox里面的像素全部标记为前景，其它的为背景。训练的时候每个类单独训练二元分类器，这样就会产生跟类别数量一样的分割图，这种做法由它设置label的方式决定的，因为物体会存在互相遮挡的情况（不同bounding box有可能存在overlap），一个proposa可能会覆盖多个物体，所以存在某个像素点可以同属于不同的类别，也就是说不能单纯的按照bounding box去设置label（这种label是指0, 1, 2, 3, 4, .., N，N表示类别数），然后只用一个softmax去做分类。举个例子讲，一个像素点属于A类跟属于B类并不是互斥的，这种情况下用2个二元分类器会比用一个有3个label的softmax更靠谱。</li>
+</ul>
+
+<ul>
+<li><strong><em>Region Adaptation Module</em></strong>: 这个的输入是摘掉了分类层的FCN。然后训练方式就跟每个Multi-region module一样了。但是前面提到Segmentation Maps是用N个二元分类器干的，应该怎么把Activation Maps传给Region Adaptation Module？文章中没提到，我猜想是把N个二元分类器的activation maps拼接在一起然后喂到这个module里面。</li>
+</ul>
+<p>最终把这两个features拼在一起就组成了下面的网络：</p>
+<img src="/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/whole_net.png">
+<h1 id="Object-Localization"><a href="#Object-Localization" class="headerlink" title="Object Localization"></a>Object Localization</h1><p>大体分为两个步骤：迭代定位(Iterative Localization)跟投票(Bounding box voting)。</p>
+<h2 id="Iterative-Localization"><a href="#Iterative-Localization" class="headerlink" title="Iterative Localization"></a>Iterative Localization</h2><p>在给proposals打分跟对proposals的bbox进行refine这两步进行迭代。给定proposals，对proposals进行打分，根据分数对proposals进行筛选，对剩下的proposals进行打分并筛选，如此循环，直到收敛。一开始，proposals是由selective search产生，作者说迭代两次就够了。</p>
+<h2 id="Bounding-box-voting"><a href="#Bounding-box-voting" class="headerlink" title="Bounding box voting"></a>Bounding box voting</h2><p>是一个普通nms的改进版本，普通的nms是找两个overlap大于一定阈值的proposals，然后把分数低的剔除掉，而作者使用的方法是：假设有proposals的集合为$P = \{p_1, p_2, …, p_n\}$，先找出分数最大的proposal $p_r$，然后找出跟这个proposal的overlap大于一定阈值的所有proposals $P_c$出来(假设$P_c$为空，就选次大的$p_r$，重复上面步骤)，对他们进行位置信息加权平均，权值是他们的分数（要做归一化），然后得到新的proposal $p_new$，把$p_r \cap P_c$从$P$里面删掉，把$p_new$加到$P$里面，继续上面的操作指导无法合并。</p>
+<p>示意图如下：</p>
+<img src="/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/localization.jpg">
+<h1 id="Results"><a href="#Results" class="headerlink" title="Results"></a>Results</h1><p>作者对每个region adaptation module都做了单独的实验，单独的话效果都很一般般。</p>
+<img src="/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/result_individual.jpg">
+<p>合起来之后，并且加上作者提到的Localization Scheme之后，效果就飞起来了:</p>
+<p><strong>PASCAL VOC 2007</strong>:</p>
+<img src="/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/result_2007.jpg">
+<p><strong>PASCAL VOC 2012</strong>:</p>
+<img src="/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/result_2012.jpg">
+<p>pipeline里面的每个component是分离的，每一个component的性能都会影响整体的性能，为什么没人把整个pipeline(至少我目前还没看过)？当然这有一个好处是，每个component可以单独调参数。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/img/wechat_pay.png" alt="Zhujin Liang WeChat Pay" height=300 width=300/>
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/img/alipay_pay.jpg" alt="Zhujin Liang Alipay" height=300 width=300/>
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Detection/" rel="tag"># Detection</a>
+          
+            <a href="/tags/CNN/" rel="tag"># CNN</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/posts/2015/05/14/ubuntu-14-04-problem/" rel="next" title="记录使用Ubuntu14.04遇到的问题(长期更新)">
+                <i class="fa fa-chevron-left"></i> 记录使用Ubuntu14.04遇到的问题(长期更新)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/posts/2015/05/17/cnn-trick/" rel="prev" title="Concepts and Tricks In CNN(长期更新)">
+                Concepts and Tricks In CNN(长期更新) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/img/avatar_zhujin.jpg"
+               alt="Zhujin Liang" />
+          <p class="site-author-name" itemprop="name">Zhujin Liang</p>
+           
+              <p class="site-description motion-element" itemprop="description">Old soldiers never die, they just fade away.</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">14</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/alfredtofu/" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://cn.linkedin.com/in/zhujinliang" target="_blank" title="LinkedIn">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                  LinkedIn
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons" />
+            </a>
+          </div>
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Features"><span class="nav-number">1.</span> <span class="nav-text">Features</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Multi-Region-CNN-features"><span class="nav-number">1.1.</span> <span class="nav-text">Multi-Region CNN features</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Semantic-Segmentation-Aware-CNN-features"><span class="nav-number">1.2.</span> <span class="nav-text">Semantic Segmentation-Aware CNN features</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Object-Localization"><span class="nav-number">2.</span> <span class="nav-text">Object Localization</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Iterative-Localization"><span class="nav-number">2.1.</span> <span class="nav-text">Iterative Localization</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Bounding-box-voting"><span class="nav-number">2.2.</span> <span class="nav-text">Bounding box voting</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Results"><span class="nav-number">3.</span> <span class="nav-text">Results</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zhujin Liang</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://alfredtofu.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://blog.cvmarcher.cn/posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/';
+          this.page.identifier = 'posts/2015/05/17/multi-region-semantic-segmentation-aware-cnn/';
+          this.page.title = 'Notes for \"Object detection via a multi-region & semantic segmentation-aware CNN model\"';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://alfredtofu.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("gPzjxfdGfSWMuqMdUAcdJlAp-gzGzoHsz", "RfRdQhoR3otJRIvtqct8zlIT");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</body>
+</html>
